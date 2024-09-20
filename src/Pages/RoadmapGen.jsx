@@ -32,10 +32,9 @@ function RoadmapGen() {
   const [skillLevel, setSkillLevel] = useState("");
   const [timeCommitment, setTimeCommitment] = useState("");
   const [learningPreference, setLearningPreference] = useState("");
-  const [response, setResponse] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [roadmap, setRoadmap] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -56,6 +55,7 @@ function RoadmapGen() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setRoadmap(null);
 
     // Input validation
     if (!mainPrompt || !skillLevel || !timeCommitment || !learningPreference) {
@@ -98,9 +98,14 @@ function RoadmapGen() {
         .trim();
       const roadmapData = JSON.parse(cleanedResponse);
 
+      // Set the roadmap state to display it
+      setRoadmap(roadmapData);
+
       // Sanitize user input before saving to database
       const sanitizedTitle = DOMPurify.sanitize(roadmapData.title);
       const sanitizedDescription = DOMPurify.sanitize(roadmapData.description);
+
+      console.log("Generated roadmap data:", roadmapData);
 
       const { data, error } = await supabase.from("roadmaps").insert({
         id: uuidv4(),
@@ -110,7 +115,12 @@ function RoadmapGen() {
         content: roadmapData,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving roadmap:", error);
+        setError("Failed to save roadmap. Please try again.");
+      } else {
+        console.log("Roadmap saved successfully:", data);
+      }
     } catch (error) {
       console.error("Error:", error);
       setError(
@@ -126,32 +136,29 @@ function RoadmapGen() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-white py-8">
-      <div className="max-w-4xl mx-auto p-6 space-y-8">
-        <header className="text-center space-y-2">
-          <h1 className="text-5xl font-bold text-gray-800">
+    <div className="min-h-screen bg-black py-10 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="max-w-xl w-full space-y-8">
+        <header className="text-center">
+          <h1 className="text-4xl font-bold text-white mb-2">
             Your Personalized Learning Path
           </h1>
-          <p className="text-m text-gray-600">
-            Unlock your potential with a clear and concise plan, designed to fit
-            your schedule and learning goals.
+          <p className="text-m text-gray-400">
+            Unlock your potential with a clear and concise plan.
           </p>
         </header>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <input
-              type="text"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white bg-opacity-80"
-              placeholder="Enter your primary learning goal"
-              value={mainPrompt}
-              onChange={(e) => setMainPrompt(e.target.value)}
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <input
+            type="text"
+            className="w-full p-3 text-sm border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-black text-white"
+            placeholder="Enter your primary learning goal"
+            value={mainPrompt}
+            onChange={(e) => setMainPrompt(e.target.value)}
+          />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <select
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white bg-opacity-80"
+              className="w-full p-3 text-sm border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-black text-white"
               value={skillLevel}
               onChange={(e) => setSkillLevel(e.target.value)}
             >
@@ -162,7 +169,7 @@ function RoadmapGen() {
             </select>
 
             <select
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white bg-opacity-80"
+              className="w-full p-3 text-sm border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-black text-white"
               value={timeCommitment}
               onChange={(e) => setTimeCommitment(e.target.value)}
             >
@@ -182,7 +189,7 @@ function RoadmapGen() {
             </select>
 
             <select
-              className="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white bg-opacity-80"
+              className="w-full p-3 text-sm border border-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-black text-white"
               value={learningPreference}
               onChange={(e) => setLearningPreference(e.target.value)}
             >
@@ -201,9 +208,9 @@ function RoadmapGen() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition duration-200"
+            className="w-full bg-white text-black p-3 rounded-md hover:bg-grey-200 transition duration-200 text-sm"
           >
-            Submit
+            Generate Roadmap
           </button>
         </form>
 
@@ -224,42 +231,88 @@ function RoadmapGen() {
           </div>
         )}
 
-        {response && !isLoading && (
-          <div className="mt-6 p-6 bg-white shadow-lg rounded-lg">
-            <h2 className="text-2xl font-bold mb-4">{response.title}</h2>
-            <p className="text-gray-600 mb-6">{response.description}</p>
-            <div className="space-y-6">
-              {response.steps.map((step, index) => (
-                <div key={index} className="border-l-4 border-blue-500 pl-4">
-                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-gray-700 mb-2">{step.description}</p>
-                  {step.resources && step.resources.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-gray-600 mb-1">
-                        Resources:
-                      </h4>
-                      <ul className="list-disc list-inside text-blue-600">
-                        {step.resources.map((resource, resIndex) => (
-                          <li key={resIndex}>
-                            {resource.startsWith("http") ? (
-                              <a
-                                href={resource}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:underline"
-                              >
-                                {resource}
-                              </a>
-                            ) : (
-                              resource
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+        {roadmap && !isLoading && (
+          <div className="mt-10 p-6 bg-gray-900 shadow-lg rounded-lg text-white">
+            <h2 className="text-2xl font-bold mb-4 text-white">
+              {roadmap.title}
+            </h2>
+            <p className="text-gray-300 mb-6">{roadmap.description}</p>
+
+            {/* Timeline */}
+            <div className="space-y-8">
+              {roadmap.steps.map((step, index) => (
+                <div key={index} className="group relative flex gap-x-5">
+                  {/* Icon */}
+                  <div className="relative group-last:after:hidden after:absolute after:top-8 after:bottom-2 after:start-3 after:w-px after:-translate-x-[0.5px] after:bg-gray-700">
+                    <div className="relative z-10 w-6 h-6 flex justify-center items-center">
+                      <svg
+                        className="w-6 h-6 text-blue-400"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
                     </div>
-                  )}
+                  </div>
+                  {/* End Icon */}
+
+                  {/* Right Content */}
+                  <div className="grow pb-8 group-last:pb-0">
+                    <h3 className="font-semibold text-sm text-white">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-300">
+                      {step.description}
+                    </p>
+                    {step.resources && step.resources.length > 0 && (
+                      <div className="mt-3">
+                        <h4 className="font-semibold text-xs text-gray-200 mb-1">
+                          Resources:
+                        </h4>
+                        <ul className="list-disc ms-6 space-y-1">
+                          {step.resources.map((resource, resIndex) => (
+                            <li
+                              key={resIndex}
+                              className="text-sm text-blue-300"
+                            >
+                              {resource.startsWith("http") ? (
+                                <a
+                                  href={resource}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline"
+                                >
+                                  {resource}
+                                </a>
+                              ) : (
+                                resource
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  {/* End Right Content */}
                 </div>
               ))}
+            </div>
+            {/* End Timeline */}
+
+            <div className="mt-6">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="border border-white text-white px-4 py-2 rounded hover:bg-black transition duration-200"
+              >
+                Save and Go to Dashboard
+              </button>
             </div>
           </div>
         )}

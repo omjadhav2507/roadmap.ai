@@ -1,31 +1,42 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../component/Navbar";
 import Logo from "../assets/Logo.svg";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
+import LoginModal from "../component/Login";
+import SignupModal from "../component/Signup";
 
 function Home() {
   const navigate = useNavigate();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const checkUser = async () => {
       const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        navigate("/generate-roadmap");
-      }
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
     };
     checkUser();
-  }, [navigate]);
+  }, []);
 
   const handleGenerateRoadmap = async (e) => {
     e.preventDefault();
+    if (!user) {
+      setShowSignupModal(true);
+    } else {
+      navigate("/generate-roadmap");
+    }
+  };
+
+  const handlePromptClick = async () => {
     const {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) {
-      navigate("/login");
+      setShowSignupModal(true);
     } else {
       navigate("/generate-roadmap");
     }
@@ -33,9 +44,13 @@ function Home() {
 
   return (
     <>
+      <Navbar
+        setShowLoginModal={setShowLoginModal}
+        setShowSignupModal={setShowSignupModal}
+      />
       <div className="bg-black text-white min-h-screen">
-        <main className="container text-center max-w-4xl mx-auto px-4 py-14">
-          <h2 className="text-5xl font-bold mb-6">
+        <main className="container text-center max-w-4xl mx-auto px-4 py-20 mt-12">
+          <h2 className="text-4xl font-bold mb-6">
             Transform Your Goals with AI-Powered Roadmaps
           </h2>
           <p className="text-xl mb-8">
@@ -76,6 +91,7 @@ function Home() {
               <div
                 key={index}
                 className="bg-custom-gray text-white p-4 rounded-lg cursor-pointer h-24 flex justify-center items-center text-center group"
+                onClick={handlePromptClick}
               >
                 <span className="group-hover:underline">{prompt}</span>
               </div>
@@ -103,6 +119,23 @@ function Home() {
           </a>
         </div>
       </footer>
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSignupClick={() => {
+          setShowLoginModal(false);
+          setShowSignupModal(true);
+        }}
+      />
+      <SignupModal
+        isOpen={showSignupModal}
+        onClose={() => setShowSignupModal(false)}
+        onLoginClick={() => {
+          setShowSignupModal(false);
+          setShowLoginModal(true);
+        }}
+      />
     </>
   );
 }

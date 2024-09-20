@@ -40,7 +40,7 @@ function RoadmapDetail() {
         .single();
 
       if (data) {
-        setProgress(data.progress);
+        setProgress(data.progress || {});
       }
     };
 
@@ -62,48 +62,79 @@ function RoadmapDetail() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div className="text-white">Loading...</div>;
   }
 
   if (!roadmap) {
-    return <div>Roadmap not found</div>;
+    return <div className="text-white">Roadmap not found</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Link
-        to="/dashboard"
-        className="text-blue-600 hover:underline mb-4 inline-block"
-      >
-        &larr; Back to Dashboard
-      </Link>
-      <h1 className="text-3xl font-bold mb-6">{roadmap.title}</h1>
-      <p className="text-gray-600 mb-6">{roadmap.description}</p>
-      <div className="space-y-6">
-        {roadmap.content.steps.map((step, index) => (
-          <div key={index} className="border-l-4 border-blue-500 pl-4">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                checked={progress[index] || false}
-                onChange={() => handleStepCompletion(index)}
-                className="mr-2"
-              />
-              <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-            </div>
-            <p className="text-gray-700 mb-2">{step.description}</p>
-            {step.resources && step.resources.length > 0 && (
-              <div>
-                <h4 className="font-semibold text-gray-600 mb-1">Resources:</h4>
-                <ul className="list-disc list-inside text-blue-600">
-                  {step.resources.map((resource, resIndex) => (
-                    <li key={resIndex}>{resource}</li>
-                  ))}
-                </ul>
+    <div className="min-h-screen bg-black py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[85rem] mx-auto space-y-8 py-20 mt-8">
+        <Link
+          to="/dashboard"
+          className="text-blue-400 hover:underline mb-4 inline-block"
+        >
+          &larr; Back to Dashboard
+        </Link>
+        <h1 className="text-3xl font-bold mb-6 text-white">{roadmap.title}</h1>
+        <p className="text-gray-300 mb-6">{roadmap.description}</p>
+
+        {/* Timeline */}
+        <div className="space-y-8">
+          {roadmap.content.steps.map((step, index) => (
+            <div key={index} className="group relative flex gap-x-5">
+              {/* Icon */}
+              <div className="relative group-last:after:hidden after:absolute after:top-8 after:bottom-2 after:start-3 after:w-px after:-translate-x-[0.5px] after:bg-gray-700">
+                <div className="relative z-10 w-6 h-6 flex justify-center items-center">
+                  <input
+                    type="checkbox"
+                    checked={progress[index] || false}
+                    onChange={() => handleStepCompletion(index)}
+                    className="form-checkbox h-5 w-5 text-blue-600 rounded-full border-gray-300 focus:ring-blue-500"
+                  />
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+              {/* End Icon */}
+
+              {/* Right Content */}
+              <div className="grow pb-8 group-last:pb-0">
+                <h3 className="font-semibold text-lg text-white mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-gray-300 mb-3">{step.description}</p>
+                {step.resources && step.resources.length > 0 && (
+                  <div className="mt-2">
+                    <h4 className="font-semibold text-sm text-gray-200 mb-1">
+                      Resources:
+                    </h4>
+                    <ul className="list-disc list-inside space-y-1">
+                      {step.resources.map((resource, resIndex) => (
+                        <li key={resIndex} className="text-sm text-blue-400">
+                          {resource.startsWith("http") ? (
+                            <a
+                              href={resource}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline"
+                            >
+                              {resource}
+                            </a>
+                          ) : (
+                            resource
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              {/* End Right Content */}
+            </div>
+          ))}
+        </div>
+        {/* End Timeline */}
       </div>
     </div>
   );
